@@ -1,0 +1,33 @@
+<nav class="navbar navbar-expand-lg bg-body-tertiary" hx-boost="true" hx-target="#main">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/">
+      <i class="bi bi-house-door-fill"></i> Home
+    </a>
+    <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarContent">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+        <!-- Group all required features under a dropdown -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+            Income Share Features
+          </a>
+          <ul class="dropdown-menu" hx-target="#main">
+            <li><a class="dropdown-item" href="/income/by-country">Country time series</a></li>
+            <li><a class="dropdown-item" href="/income/by-subregion">Sub-region & year</a></li>
+            <li><a class="dropdown-item" href="/income/by-region">Region avg by sub-region</a></li>
+            <li><a class="dropdown-item" href="/income/search">Keyword search (country)</a></li>
+            <li><a class="dropdown-item" href="/income/add-next">Add next-year record</a></li>
+            <li><a class="dropdown-item" href="/income/update-one">Update a record</a></li>
+            <li><a class="dropdown-item" href="/income/delete-range">Delete year range</a></li>
+            <li><a class="dropdown-item" href="/income/extra">Your extra feature</a></li>
+          </ul>
+        </li>
+
+      </ul>
+    </div>
+  </div>
+</nav>

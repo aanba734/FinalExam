@@ -1,0 +1,37 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: finalexam-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: Final          # initial DB (keep this as Final)
+      MYSQL_USER: examuser
+      MYSQL_PASSWORD: exampass
+    ports:
+      - "3306:3306"
+    volumes:
+      # MySQL data dir
+      - db_data:/var/lib/mysql
+      # Folder where MySQL is allowed to read CSVs (for LOAD DATA INFILE)
+      - ./data:/var/lib/mysql-files
+      # Run ETL.sql automatically on first container startup
+      - ./ETL.sql:/docker-entrypoint-initdb.d/ETL.sql:ro
+
+  app:
+    image: node:22
+    container_name: finalexam-app
+    restart: always
+    working_dir: /app
+    volumes:
+      - ./:/app
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+    command: >
+      sh -c "npm install &&
+             node app.js"
+
+volumes:
+  db_data:
