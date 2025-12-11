@@ -1,12 +1,9 @@
 -- ====================================================================
--- ETL SCRIPT FOR Income Share DATABASE (SAFE TO RE-RUN)
+-- ETL SCRIPT FOR Income Share DATABASE (DOCKER INIT VERSION)
 -- ====================================================================
 
--- ------------------------------
--- 0. RESET DATABASE (OPTIONAL)
--- ------------------------------
-DROP DATABASE IF EXISTS Final;
-CREATE DATABASE Final;
+-- Create DB if missing and use it
+CREATE DATABASE IF NOT EXISTS Final;
 USE Final;
 
 -- ====================================================================
@@ -91,8 +88,8 @@ CREATE TABLE staging_data1 (
 -- 4. LOAD RAW CSV DATA
 -- ====================================================================
 
--- Requires files to exist at /var/lib/mysql-files/data1.csv and data2.csv  
--- Requires secure_file_priv allows this directory
+-- CSVs must be visible at /var/lib/mysql-files inside container
+-- We'll mount that directory from Windows in docker run.
 
 LOAD DATA INFILE '/var/lib/mysql-files/data1.csv'
 INTO TABLE staging_data1
@@ -191,7 +188,3 @@ JOIN years y
 
 DROP TABLE staging_data1;
 DROP TABLE staging_data2;
-
--- =======================
--- ETL COMPLETE ✔️
--- =======================
