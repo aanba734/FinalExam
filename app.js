@@ -1,64 +1,62 @@
 const express = require('express');
-const db = require('mysql2');
+const path = require('path');
+const mysql = require('mysql2/promise');
+const config = require('./config');
+
 const app = express();
+const PORT = process.env.PORT || 80;  // Changed to 80 to match compose.yaml
 
-app.set('view engine', 'hjs');
+// Middleware
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static("public"));
 
-const configs = require('./config');
-const connection = db.createConnection(configs.db);
+// Database connection pool
+let pool;
 
-connection.connect((err) => {
-  if (err) {
-    console.log("Error connecting to database: ", err);
-    process.exit();
-  } else {
-    console.log("Connected to database");
+// Initialize database connection
+async function initDatabase() {
+  try {
+    pool = mysql.createPool(config.db);
+    
+    // Test connection
+    const connection = await pool.getConnection();
+    console.log('✅ Database connected successfully');
+    connection.release();
+    
+    return pool;
+  } catch (error) {
+    console.error('❌ Database connection failed:', error.message);
+    console.log('⏳ Retrying in 5 seconds...');
+    
+    // Retry connection after 5 seconds
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    return initDatabase();
   }
+}
+
+// Make pool available to routes
+app.use((req, res, next) => {
+  req.db = pool;
+  next();
 });
 
-// homepage – HTMX vs full-page (same trick as lab)
-app.get('/', (req, res) => {
-  if (req.get("HX-Request")) {
-    // small snippet for HTMX partial load
-    res.send(
-      '<div class="text-center">' +
-      '<i class="bi bi-graph-up-arrow" style="font-size: 30vh;"></i>' +
-      '<p class="lead">Income Share of the Top 1% explorer</p>' +
-      '</div>'
-    );
-  } else {
-    // full layout
-    res.render('layout', {
-      title: 'Income Share of the Top 1% Explorer',
-      partials: {
-        navbar: 'navbar',
-      },
-    });
-  }
+// Routes
+app.use('/', require('./routes/index'));
+app.use('/api', require('./routes/api'));
+
+// Error handling
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
 });
 
-// mount your income router (we’ll create it soon)
-const income = require('./routes/income');
-income.connection = connection;   // dependency injection like lab
-app.use('/income', income);
-
-// wildcard route for reload issue (exactly like lab manual)
-app.get(/.*/, (req, res, next) => {
-  if (req.get("HX-Request")) {
-    next();
-  } else {
-    res.render('layout', {
-      title: 'Income Share of the Top 1% Explorer',
-      partials: {
-        navbar: 'navbar',
-      },
-      where: req.url,        // tells HTMX what to load into #main
-    });
-  }
-});
-
-app.listen(80, function () {
-  console.log('Web server listening on port 80!');
+// Start server after database connection is ready
+initDatabase().then(() => {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running on http://localhost:8080`);
+    console.log(`📊 Income Share Top 1% Analysis Platform`);
+  });
 });

@@ -1,9 +1,12 @@
 const config = {
   db: {
-    host: "172.17.0.2",   // container name = MySQL host from Node container
-    user: "root",
-    password: "Final",
-    database: "Final",
+    host: "db",              // Use service name from compose.yaml
+    user: "root",            // Changed to root to match your password
+    password: "rootpass",     // Match compose.yaml
+    database: "Final",        // Match your database name
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
     connectTimeout: 60000,
   },
 };

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Country Timeline - Income Share Top 1%</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/" class="logo">📊 Income Share Analysis</a>
+      <ul class="nav-links">
+        <li><a href="/">Home</a></li>
+        <li><a href="/feature1">Timeline</a></li>
+        <li><a href="/feature4">Search</a></li>
+      </ul>
+    </nav>
+  </header>
+  
+  <main class="container">
+    <div class="card">
+      <div class="card-header">
+        <h1>Feature 1: Country Timeline</h1>
+        <p>View income share of the top 1% for a country over the years</p>
+      </div>
+      
+      <div class="form-group">
+        <label for="countrySelect">Select Country:</label>
+        <select id="countrySelect" class="form-control">
+          <option value="">-- Choose a country --</option>
+          <% countries.forEach(country => { %>
+            <option value="<%= country.country_id %>"><%= country.name %></option>
+          <% }); %>
+        </select>
+      </div>
+      
+      <div id="results" class="results hidden">
+        <h2>Results</h2>
+        <div class="table-container">
+          <table id="resultsTable">
+            <thead>
+              <tr>
+                <th>Year</th>
+                <th>Income Share Top 1%</th>
+              </tr>
+            </thead>
+            <tbody id="resultsBody"></tbody>
+          </table>
+        </div>
+      </div>
+      
+      <div id="loading" class="loading hidden">Loading data</div>
+      <div id="noResults" class="no-results hidden">No data available for this country</div>
+    </div>
+  </main>
+  
+  <script>
+    document.getElementById('countrySelect').addEventListener('change', async (e) => {
+      const countryId = e.target.value;
+      if (!countryId) return;
+      
+      document.getElementById('results').classList.add('hidden');
+      document.getElementById('noResults').classList.add('hidden');
+      document.getElementById('loading').classList.remove('hidden');
+      
+      try {
+        const response = await fetch(`/api/country-timeline/${countryId}`);
+        const data = await response.json();
+        
+        document.getElementById('loading').classList.add('hidden');
+        
+        if (data.length === 0) {
+          document.getElementById('noResults').classList.remove('hidden');
+          return;
+        }
+        
+        const tbody = document.getElementById('resultsBody');
+tbody.innerHTML = data.map(row => {
+  const val = row.top1_share === null || row.top1_share === undefined
+    ? null
+    : Number.parseFloat(row.top1_share);
+
+  return `
+    <tr>
+      <td>${row.year}</td>
+      <td>${Number.isFinite(val) ? val.toFixed(2) + '%' : 'N/A'}</td>
+    </tr>
+  `;
+}).join('');
+        
+        document.getElementById('results').classList.remove('hidden');
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('loading').classList.add('hidden');
+        alert('Error loading data');
+      }
+    });
+  </script>
+</body>
+</html>

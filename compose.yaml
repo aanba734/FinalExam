@@ -5,18 +5,24 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: rootpass
-      MYSQL_DATABASE: Final          # initial DB (keep this as Final)
+      MYSQL_DATABASE: Final
       MYSQL_USER: examuser
       MYSQL_PASSWORD: exampass
     ports:
       - "3306:3306"
     volumes:
-      # MySQL data dir
       - db_data:/var/lib/mysql
-      # Folder where MySQL is allowed to read CSVs (for LOAD DATA INFILE)
       - ./data:/var/lib/mysql-files
-      # Run ETL.sql automatically on first container startup
-      - ./ETL.sql:/docker-entrypoint-initdb.d/ETL.sql:ro
+      # CHANGED: Rename to 01-ETL.sql so it runs in order
+      - ./ETL.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpass"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    # ADDED: Give more time for initialization
+    command: --init-file=/docker-entrypoint-initdb.d/01-init.sql
 
   app:
     image: node:22
@@ -28,10 +34,16 @@ services:
     ports:
       - "8080:80"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    # ADDED: Retry logic if database isn't ready
     command: >
-      sh -c "npm install &&
-             node app.js"
+      sh -c "
+        echo 'Waiting for database to be fully ready...' &&
+        sleep 10 &&
+        npm install &&
+        node app.js
+      "
 
 volumes:
   db_data:

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title || 'Income Share Top 1%' %></title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/" class="logo">📊 Income Share Analysis</a>
+      <ul class="nav-links">
+        <li><a href="/">Home</a></li>
+        <li><a href="/feature1">Timeline</a></li>
+        <li><a href="/feature4">Search</a></li>
+      </ul>
+    </nav>
+  </header>
+  
+  <main class="container">
+    <%- body %>
+  </main>
+  
+  <script src="/js/main.js"></script>
+</body>
+</html>
