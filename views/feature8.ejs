@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visual Analytics - Income Share Top 1%</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/" class="logo">📊 Income Share Analysis</a>
+      <ul class="nav-links">
+        <li><a href="/">Home</a></li>
+        <li><a href="/feature1">Timeline</a></li>
+        <li><a href="/feature4">Search</a></li>
+      </ul>
+    </nav>
+  </header>
+  
+  <main class="container">
+    <div class="card">
+      <div class="card-header">
+        <h1>Feature 8: Visual Analytics</h1>
+        <p>Interactive charts and trend visualizations</p>
+      </div>
+      
+      <!-- Multi-Country Comparison -->
+      <h2>Compare Countries</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="country1">Country 1:</label>
+          <select id="country1" class="form-control">
+            <option value="">-- Choose --</option>
+            <% countries.forEach(country => { %>
+              <option value="<%= country.country_id %>"><%= country.name %></option>
+            <% }); %>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="country2">Country 2:</label>
+          <select id="country2" class="form-control">
+            <option value="">-- Choose --</option>
+            <% countries.forEach(country => { %>
+              <option value="<%= country.country_id %>"><%= country.name %></option>
+            <% }); %>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="country3">Country 3 (optional):</label>
+          <select id="country3" class="form-control">
+            <option value="">-- Choose --</option>
+            <% countries.forEach(country => { %>
+              <option value="<%= country.country_id %>"><%= country.name %></option>
+            <% }); %>
+          </select>
+        </div>
+      </div>
+      
+      <button id="compareBtn" class="btn btn-primary">Generate Comparison Chart</button>
+      
+      <div class="chart-container">
+        <canvas id="comparisonChart"></canvas>
+      </div>
+    </div>
+    
+    <div class="card">
+      <h2>Regional Trends</h2>
+      <div class="form-group">
+        <label for="regionSelect">Select Region:</label>
+        <select id="regionSelect" class="form-control">
+          <option value="">-- Choose a region --</option>
+          <% regions.forEach(r => { %>
+            <option value="<%= r.region_name %>"><%= r.region_name %></option>
+          <% }); %>
+        </select>
+      </div>
+      
+      <button id="trendBtn" class="btn btn-primary">Show Trend</button>
+      
+      <div class="chart-container">
+        <canvas id="trendChart"></canvas>
+      </div>
+    </div>
+  </main>
+  
+  <script>
+    let comparisonChart = null;
+    let trendChart = null;
+    
+    document.getElementById('compareBtn').addEventListener('click', async () => {
+      const country1 = document.getElementById('country1').value;
+      const country2 = document.getElementById('country2').value;
+      const country3 = document.getElementById('country3').value;
+      
+      if (!country1 || !country2) {
+        alert('Please select at least 2 countries');
+        return;
+      }
+      
+      const countries = [country1, country2];
+      if (country3) countries.push(country3);
+      
+      try {
+        const promises = countries.map(id => 
+          fetch(`/api/country-timeline/${id}`).then(r => r.json())
+        );
+        const results = await Promise.all(promises);
+        
+        const datasets = results.map((data, idx) => ({
+          label: data[0]?.country_name || `Country ${idx + 1}`,
+          data: data.map(d => ({ x: d.year, y: parseFloat(d.top1_share) })),
+          borderColor: ['#2563eb', '#10b981', '#f59e0b'][idx],
+          backgroundColor: ['#2563eb33', '#10b98133', '#f59e0b33'][idx],
+          tension: 0.4
+        }));
+        
+        if (comparisonChart) comparisonChart.destroy();
+        
+        const ctx = document.getElementById('comparisonChart').getContext('2d');
+        comparisonChart = new Chart(ctx, {
+          type: 'line',
+          data: { datasets },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              title: {
+                display: true,
+                text: 'Income Share Comparison Over Time'
+              }
+            },
+            scales: {
+              x: {
+                type: 'linear',
+                title: { display: true, text: 'Year' }
+              },
+              y: {
+                title: { display: true, text: 'Income Share (%)' }
+              }
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error generating chart');
+      }
+    });
+    
+    document.getElementById('trendBtn').addEventListener('click', async () => {
+      const regionName = document.getElementById('regionSelect').value;
+      
+      if (!regionName) {
+        alert('Please select a region');
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/regional-trends/${encodeURIComponent(regionName)}`);
+        const data = await response.json();
+        
+        if (trendChart) trendChart.destroy();
+        
+        const ctx = document.getElementById('trendChart').getContext('2d');
+        trendChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: data.map(d => d.year),
+            datasets: [{
+              label: 'Average Income Share',
+              data: data.map(d => parseFloat(d.avg_share)),
+              borderColor: '#2563eb',
+              backgroundColor: '#2563eb33',
+              fill: true,
+              tension: 0.4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              title: {
+                display: true,
+                text: 'Regional Average Income Share Trend'
+              }
+            },
+            scales: {
+              y: {
+                title: { display: true, text: 'Average Income Share (%)' }
+              }
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error generating chart');
+      }
+    });
+  </script>
+</body>
+</html>
