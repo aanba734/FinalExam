@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Delete Records - Income Share Top 1%</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/" class="logo">📊 Income Share Analysis</a>
+      <ul class="nav-links">
+        <li><a href="/">Home</a></li>
+        <li><a href="/feature1">Timeline</a></li>
+        <li><a href="/feature4">Search</a></li>
+      </ul>
+    </nav>
+  </header>
+  
+  <main class="container">
+    <div class="card">
+      <div class="card-header">
+        <h1>Feature 7: Delete Records</h1>
+        <p>Delete income share records for a specific year range</p>
+      </div>
+      
+      <div class="alert alert-error">
+        <strong>⚠️ Warning:</strong> This action cannot be undone. Please double-check before deleting.
+      </div>
+      
+      <form id="deleteForm">
+        <div class="form-group">
+          <label for="countrySelect">Select Country:</label>
+          <select id="countrySelect" class="form-control" required>
+            <option value="">-- Choose a country --</option>
+            <% countries.forEach(country => { %>
+              <option value="<%= country.country_id %>"><%= country.name %></option>
+            <% }); %>
+          </select>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="startYear">Start Year:</label>
+            <input 
+              type="number" 
+              id="startYear" 
+              class="form-control" 
+              min="2000" 
+              max="2100" 
+              required
+            >
+          </div>
+          
+          <div class="form-group">
+            <label for="endYear">End Year:</label>
+            <input 
+              type="number" 
+              id="endYear" 
+              class="form-control" 
+              min="2000" 
+              max="2100" 
+              required
+            >
+          </div>
+        </div>
+        
+        <div class="btn-group">
+          <button type="submit" class="btn btn-danger">Delete Records</button>
+          <button type="reset" class="btn btn-secondary">Reset</button>
+        </div>
+      </form>
+      
+      <div id="successMessage" class="alert alert-success hidden">
+        <strong>Success!</strong> <span id="deletedCount"></span> record(s) deleted.
+      </div>
+      
+      <div id="errorMessage" class="alert alert-error hidden">
+        Error deleting records. Please try again.
+      </div>
+    </div>
+  </main>
+  
+  <script>
+    const form = document.getElementById('deleteForm');
+    
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const countryId = document.getElementById('countrySelect').value;
+      const startYear = document.getElementById('startYear').value;
+      const endYear = document.getElementById('endYear').value;
+      
+      if (parseInt(startYear) > parseInt(endYear)) {
+        alert('Start year must be less than or equal to end year');
+        return;
+      }
+      
+      if (!confirm(`Are you sure you want to delete all records from ${startYear} to ${endYear}?`)) {
+        return;
+      }
+      
+      document.getElementById('successMessage').classList.add('hidden');
+      document.getElementById('errorMessage').classList.add('hidden');
+      
+      try {
+        const response = await fetch('/api/delete-records', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            countryId,
+            startYear,
+            endYear
+          }),
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          document.getElementById('deletedCount').textContent = result.deletedRows;
+          document.getElementById('successMessage').classList.remove('hidden');
+          form.reset();
+        } else {
+          document.getElementById('errorMessage').classList.remove('hidden');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('errorMessage').classList.remove('hidden');
+      }
+    });
+  </script>
+</body>
+</html>
