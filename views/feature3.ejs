@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Regional Averages - Income Share Top 1%</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/" class="logo">📊 Income Share Analysis</a>
+      <ul class="nav-links">
+        <li><a href="/">Home</a></li>
+        <li><a href="/feature1">Timeline</a></li>
+        <li><a href="/feature4">Search</a></li>
+      </ul>
+    </nav>
+  </header>
+  
+  <main class="container">
+    <div class="card">
+      <div class="card-header">
+        <h1>Feature 3: Regional Averages</h1>
+        <p>View average income share across sub-regions within a region</p>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label for="regionSelect">Select Region:</label>
+          <select id="regionSelect" class="form-control">
+            <option value="">-- Choose a region --</option>
+            <% regions.forEach(r => { %>
+              <option value="<%= r.region_name %>"><%= r.region_name %></option>
+            <% }); %>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="yearSelect">Select Year:</label>
+          <select id="yearSelect" class="form-control">
+            <option value="">-- Choose a year --</option>
+            <% years.forEach(y => { %>
+              <option value="<%= y.year %>"><%= y.year %></option>
+            <% }); %>
+          </select>
+        </div>
+      </div>
+      
+      <button id="searchBtn" class="btn btn-primary">Search</button>
+      
+      <div id="results" class="results hidden">
+        <h2>Results</h2>
+        <div class="table-container">
+          <table id="resultsTable">
+            <thead>
+              <tr>
+                <th>Sub-Region</th>
+                <th>Average Income Share Top 1%</th>
+              </tr>
+            </thead>
+            <tbody id="resultsBody"></tbody>
+          </table>
+        </div>
+      </div>
+      
+      <div id="loading" class="loading hidden">Loading data</div>
+      <div id="noResults" class="no-results hidden">No data available</div>
+    </div>
+  </main>
+  
+  <script>
+    document.getElementById('searchBtn').addEventListener('click', async () => {
+      const regionName = document.getElementById('regionSelect').value;
+      const year = document.getElementById('yearSelect').value;
+      
+      if (!regionName || !year) {
+        alert('Please select both region and year');
+        return;
+      }
+      
+      document.getElementById('results').classList.add('hidden');
+      document.getElementById('noResults').classList.add('hidden');
+      document.getElementById('loading').classList.remove('hidden');
+      
+      try {
+        const response = await fetch(`/api/region-averages/${encodeURIComponent(regionName)}/${year}`);
+        const data = await response.json();
+        
+        document.getElementById('loading').classList.add('hidden');
+        
+        if (data.length === 0) {
+          document.getElementById('noResults').classList.remove('hidden');
+          return;
+        }
+        
+        const tbody = document.getElementById('resultsBody');
+        tbody.innerHTML = data.map(row => `
+          <tr>
+            <td>${row.subregion_name || 'N/A'}</td>
+            <td>${row.avg_share ? parseFloat(row.avg_share).toFixed(2) + '%' : 'N/A'}</td>
+          </tr>
+        `).join('');
+        
+        document.getElementById('results').classList.remove('hidden');
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('loading').classList.add('hidden');
+        alert('Error loading data');
+      }
+    });
+  </script>
+</body>
+</html>
