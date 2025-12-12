@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Update Record - Income Share Top 1%</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/" class="logo">📊 Income Share Analysis</a>
+      <ul class="nav-links">
+        <li><a href="/">Home</a></li>
+        <li><a href="/feature1">Timeline</a></li>
+        <li><a href="/feature4">Search</a></li>
+      </ul>
+    </nav>
+  </header>
+  
+  <main class="container">
+    <div class="card">
+      <div class="card-header">
+        <h1>Feature 6: Update Record</h1>
+        <p>Update an existing income share record</p>
+      </div>
+      
+      <form id="updateForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="countrySelect">Select Country:</label>
+            <select id="countrySelect" class="form-control" required>
+              <option value="">-- Choose a country --</option>
+              <% countries.forEach(country => { %>
+                <option value="<%= country.country_id %>"><%= country.name %></option>
+              <% }); %>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="yearSelect">Select Year:</label>
+            <select id="yearSelect" class="form-control" required>
+              <option value="">-- Choose a year --</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="shareInput">New Income Share Top 1% (%):</label>
+          <input 
+            type="number" 
+            id="shareInput" 
+            class="form-control" 
+            step="0.01" 
+            min="0" 
+            max="100" 
+            required
+            placeholder="e.g., 15.45"
+          >
+        </div>
+        
+        <div class="btn-group">
+          <button type="submit" class="btn btn-warning">Update Record</button>
+          <button type="reset" class="btn btn-secondary">Reset</button>
+        </div>
+      </form>
+      
+      <div id="successMessage" class="alert alert-success hidden">
+        Record updated successfully!
+      </div>
+      
+      <div id="errorMessage" class="alert alert-error hidden">
+        Error updating record. Please try again.
+      </div>
+    </div>
+  </main>
+  
+  <script>
+    const countrySelect = document.getElementById('countrySelect');
+    const yearSelect = document.getElementById('yearSelect');
+    const shareInput = document.getElementById('shareInput');
+    const form = document.getElementById('updateForm');
+    
+    countrySelect.addEventListener('change', async (e) => {
+      const countryId = e.target.value;
+      yearSelect.innerHTML = '<option value="">-- Choose a year --</option>';
+      shareInput.value = '';
+      
+      if (!countryId) return;
+      
+      try {
+        const response = await fetch(`/api/country-years/${countryId}`);
+        const years = await response.json();
+        
+        years.forEach(y => {
+          const option = document.createElement('option');
+          option.value = y.year;
+          option.textContent = y.year;
+          yearSelect.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    });
+    
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const countryId = countrySelect.value;
+      const year = yearSelect.value;
+      const top1Share = shareInput.value;
+      
+      document.getElementById('successMessage').classList.add('hidden');
+      document.getElementById('errorMessage').classList.add('hidden');
+      
+      try {
+        const response = await fetch('/api/update-record', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            countryId,
+            year,
+            top1Share
+          }),
+        });
+        
+        const result = await response.json();
+        
+        if (result.success && result.affectedRows > 0) {
+          document.getElementById('successMessage').classList.remove('hidden');
+          shareInput.value = '';
+        } else {
+          document.getElementById('errorMessage').classList.remove('hidden');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('errorMessage').classList.remove('hidden');
+      }
+    });
+  </script>
+</body>
+</html>
