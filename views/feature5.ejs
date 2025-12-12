@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add New Record - Income Share Top 1%</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/" class="logo">📊 Income Share Analysis</a>
+      <ul class="nav-links">
+        <li><a href="/">Home</a></li>
+        <li><a href="/feature1">Timeline</a></li>
+        <li><a href="/feature4">Search</a></li>
+      </ul>
+    </nav>
+  </header>
+  
+  <main class="container">
+    <div class="card">
+      <div class="card-header">
+        <h1>Feature 5: Add New Record</h1>
+        <p>Add a new income share record for the next year</p>
+      </div>
+      
+      <form id="addForm">
+        <div class="form-group">
+          <label for="countrySelect">Select Country:</label>
+          <select id="countrySelect" class="form-control" required>
+            <option value="">-- Choose a country --</option>
+            <% countries.forEach(country => { %>
+              <option value="<%= country.country_id %>"><%= country.name %></option>
+            <% }); %>
+          </select>
+        </div>
+        
+        <div id="yearInfo" class="alert alert-info hidden">
+          <strong>Latest year for this country:</strong> <span id="latestYear"></span>
+          <br>
+          <strong>Next year will be:</strong> <span id="nextYear"></span>
+        </div>
+        
+        <div class="form-group">
+          <label for="yearInput">Year:</label>
+          <input 
+            type="number" 
+            id="yearInput" 
+            class="form-control" 
+            min="2000" 
+            max="2100" 
+            required
+            readonly
+          >
+        </div>
+        
+        <div class="form-group">
+          <label for="shareInput">Income Share Top 1% (%):</label>
+          <input 
+            type="number" 
+            id="shareInput" 
+            class="form-control" 
+            step="0.01" 
+            min="0" 
+            max="100" 
+            required
+            placeholder="e.g., 15.45"
+          >
+        </div>
+        
+        <div class="btn-group">
+          <button type="submit" class="btn btn-primary">Add Record</button>
+          <button type="reset" class="btn btn-secondary">Reset</button>
+        </div>
+      </form>
+      
+      <div id="successMessage" class="alert alert-success hidden">
+        Record added successfully!
+      </div>
+      
+      <div id="errorMessage" class="alert alert-error hidden">
+        Error adding record. Please try again.
+      </div>
+    </div>
+  </main>
+  
+  <script>
+    const countrySelect = document.getElementById('countrySelect');
+    const yearInput = document.getElementById('yearInput');
+    const shareInput = document.getElementById('shareInput');
+    const form = document.getElementById('addForm');
+    
+    countrySelect.addEventListener('change', async (e) => {
+      const countryId = e.target.value;
+      if (!countryId) {
+        document.getElementById('yearInfo').classList.add('hidden');
+        yearInput.value = '';
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/latest-year/${countryId}`);
+        const data = await response.json();
+        
+        const latestYear = data.latest_year || new Date().getFullYear();
+        const nextYear = latestYear + 1;
+        
+        document.getElementById('latestYear').textContent = latestYear;
+        document.getElementById('nextYear').textContent = nextYear;
+        yearInput.value = nextYear;
+        document.getElementById('yearInfo').classList.remove('hidden');
+      } catch (error) {
+        console.error('Error:', error);
+        yearInput.value = new Date().getFullYear() + 1;
+      }
+    });
+    
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const countryId = countrySelect.value;
+      const year = yearInput.value;
+      const top1Share = shareInput.value;
+      
+      document.getElementById('successMessage').classList.add('hidden');
+      document.getElementById('errorMessage').classList.add('hidden');
+      
+      try {
+        const response = await fetch('/api/add-record', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            countryId,
+            year,
+            top1Share
+          }),
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          document.getElementById('successMessage').classList.remove('hidden');
+          form.reset();
+          document.getElementById('yearInfo').classList.add('hidden');
+        } else {
+          document.getElementById('errorMessage').classList.remove('hidden');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('errorMessage').classList.remove('hidden');
+      }
+    });
+  </script>
+</body>
+</html>
