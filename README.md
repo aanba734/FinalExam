@@ -1,46 +1,37 @@
 ```mermaid
 erDiagram
-  REGION {
+  REGIONS {
     int region_id PK
-    string name
-    string code
+    text region_name
+    text sub_region_name
+    text intermediate_region_name
+    text region_code
+    text sub_region_code
+    text intermediate_region_code
   }
 
-  SUBREGION {
-    int subregion_id PK
-    int region_id FK
-    string name
-    string code
-  }
-
-  INTERMEDIATEREGION {
-    int intermediate_region_id PK
-    int subregion_id FK
-    string name
-    string code
-  }
-
-  COUNTRY {
+  COUNTRIES {
     int country_id PK
-    int subregion_id FK
-    int intermediate_region_id FK
-    string name
-    string iso_alpha2
-    string iso_alpha3
-    string numeric_code
-    string iso_3166_2
+    text name
+    text alpha2
+    text alpha3
+    text country_code
+    int region_id FK
   }
 
-  INCOMESHARE {
+  YEARS {
+    int year_id PK
+    int year_value "UNIQUE"
+  }
+
+  INCOME_SHARES {
     int income_share_id PK
     int country_id FK
-    int year
-    float top1_share
-    datetime created_at
+    int year_id FK
+    decimal top1_share
   }
 
-  REGION ||--o{ SUBREGION : "has"
-  SUBREGION ||--o{ INTERMEDIATEREGION : "has"
-  SUBREGION ||--o{ COUNTRY : "has"
-  INTERMEDIATEREGION ||--o{ COUNTRY : "has"
-  COUNTRY ||--o{ INCOMESHARE : "has yearly"
+  REGIONS ||--o{ COUNTRIES : "groups"
+  COUNTRIES ||--o{ INCOME_SHARES : "has"
+  YEARS ||--o{ INCOME_SHARES : "indexes"
+
